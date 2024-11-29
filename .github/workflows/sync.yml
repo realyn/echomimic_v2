@@ -8,13 +8,46 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
     steps:
-      - name: Sync Fork
-        uses: TG908/fork-sync@v1.1
+      - uses: actions/checkout@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          owner: realyn
-          base: main
-          head: main
-          merge_method: merge
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          
+      - name: Print Remote Info
+        run: |
+          echo "Current remotes:"
+          git remote -v
+          
+      - name: Sync Fork
+        run: |
+          # 删除已存在的upstream（如果有的话）
+          git remote remove upstream || true
+          
+          # 添加正确的upstream地址
+          git remote add upstream https://github.com/antgroup/echomimic_v2.git
+          
+          # 打印确认upstream添加成功
+          echo "After adding upstream:"
+          git remote -v
+          
+          # 获取上游代码
+          git fetch upstream
+          
+          # 确保我们在正确的分支上
+          git checkout master || git checkout main
+          
+          # 合并上游更改
+          git merge upstream/master || git merge upstream/main
+          
+          # 推送到fork
+          git push origin master || git push origin main
+          
+      - name: Check Repository Content
+        run: |
+          echo "Current directory content:"
+          ls -la
+          echo "README content (if exists):"
+          cat README.md || echo "README.md not found"
